@@ -4,29 +4,22 @@ from librosa import load
 from librosa.filters import mel
 
 
-def main():
-    n = 16000
-    x, sr = load(path="./Audio Samples/Command.wav", sr=n)
+def algebraic_mfcc(x, sr):
     x.shape = (len(x), 1)
     A, x = pre_emphasis(x)
-    X = framing(x, sr=n)
-    print(X.shape)
+    X = framing(x, sr=sr)
     C, X = windowing(X)
-    print(X.shape)
     D, X = DFT(X)
-    print(X.shape)
-    E, X = log_energy(X=X, sr=n)
-    print(X.shape)
+    E, X = log_energy(X=X, sr=sr)
     F, F1, MFCC = DCT(X=X)
-    print(MFCC.shape)
-    print(MFCC)
+    return A, C, D, E, F, F1, MFCC
 
 
 def pre_emphasis(x, mu=-0.97):
     n = len(x)
 
     A = np.eye(n)
-    A[0][0] = 0
+    # A[0][0] = 0
     for i in range(n - 1):
         A[i + 1][i] = mu
 
@@ -108,4 +101,4 @@ def DCT(X, n_mfccs=12, begin=1):
 
 
 if __name__ == '__main__':
-    main()
+    pass
