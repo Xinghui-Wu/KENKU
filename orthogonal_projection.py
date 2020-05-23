@@ -3,9 +3,7 @@ import numpy as np
 import math
 import random
 import scipy
-# from scipy.optimize import minimize
 from librosa import load
-from librosa.feature import mfcc
 from librosa.output import write_wav
 
 from algebraic_mfcc import algebraic_mfcc
@@ -13,10 +11,9 @@ from utils import convert
 
 
 def main(args):
-    ROOT_DIRECTORY = "./Audio Samples/"
-    song_path = ROOT_DIRECTORY + "Song.wav"
-    command_path = ROOT_DIRECTORY + "Command.wav"
-    output_path = ROOT_DIRECTORY + "Attack-1.wav"
+    song_path = "./Audio Samples/Songs/Song-{}.wav".format(args.song_index)
+    command_path = "./Audio Samples/Commands/Command-{}.wav".format(args.command_index)
+    output_path = "./Audio Samples/Malicious Samples/{}-{}-1.wav".format(args.song_index, args.command_index)
 
     attack(song_path, command_path, output_path, origin=args.origin)
 
@@ -114,35 +111,10 @@ def attack(song_path, command_path, output_path, origin):
     convert(path=output_path)
 
 
-# def attack2(song_path, command_path, output_path, origin):
-#     sr = 16000
-#     song, _ = load(song_path, sr=sr)
-#     command, _ = load(command_path, sr=sr)
-
-#     song = song[int(origin * sr): int(origin * sr) + len(command)]
-
-#     # song = np.random.rand(100)
-#     # command = np.random.rand(100)
-
-#     command_mfcc = mfcc(y=command, sr=sr)
-#     epsilon = np.linalg.norm(0.01 * song)
-#     print(command_mfcc.shape)
-#     print(epsilon)
-#     print(np.linalg.norm(0.01 * command_mfcc))
-
-#     best_delta = minimize(fun=lambda delta: np.linalg.norm(mfcc(y=song+delta, sr=sr) - command_mfcc),
-#                           x0=np.zeros(shape=song.shape),
-#                           constraints=({'type': 'ineq', 'fun': lambda delta: epsilon - np.linalg.norm(delta)}),
-#                           method='SLSQP')
-#     print(best_delta)
-
-#     attack_song = song + best_delta.x
-#     write_wav(path=output_path, y=attack_song, sr=sr)
-#     convert(path=output_path)
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="An attack method based on orthogonal projection")
+    parser.add_argument("--song_index", type=int, default=1, help="choose a song based on its index")
+    parser.add_argument("--command_index", type=int, default=1, help="choose a command based on its index")
     parser.add_argument("--origin", type=float, default=1.0, help="origin of the song to inject the command")
     arguments = parser.parse_args()
     main(arguments)
