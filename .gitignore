@@ -3,6 +3,7 @@
 .vscode/
 
 # Audio files
+Audio Samples/
 *.wav
 *.mp3
 
