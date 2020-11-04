@@ -13,30 +13,31 @@ SECRET_KEY = "w2fLg5VzQMcumFHgtPpvsXsPAj65FUyw"
 CLIENT = AipSpeech(APP_ID, API_KEY, SECRET_KEY)
 
 
-def generate_command(args):
+def generate_commands(commands, directory):
     """[summary]
 
     Args:
-        args ([type]): [description]
+        commands ([type]): [description]
+        directory ([type]): [description]
     """
-    with open(args.commands, 'r') as commands_txt:
+    with open(commands, 'r') as commands_txt:
         commands = commands_txt.readlines()
     
     for i in range(len(commands)):
         text = commands[i].strip('\n')
-        wav_path = os.path.join(args.directory, "Command-{}.wav".format(i))
-        mp3_path = os.path.join(args.directory, "Command-{}.mp3".format(i))
+        mp3_path = os.path.join(directory, "Command-{}.mp3".format(i))
+        wav_path = os.path.join(directory, "Command-{}.wav".format(i))
 
-        text_to_speech(text, wav_path, mp3_path)
+        text_to_speech(text, mp3_path, wav_path)
 
 
-def text_to_speech(text, wav_path, mp3_path):
+def text_to_speech(text, mp3_path, wav_path):
     """[summary]
 
     Args:
         text ([type]): [description]
-        wav_path ([type]): [description]
         mp3_path ([type]): [description]
+        wav_path ([type]): [description]
     """
     command = CLIENT.synthesis(text, 'zh', 1, {'vol': 5, 'per': random.choice([0, 1])})
     
@@ -51,8 +52,8 @@ def text_to_speech(text, wav_path, mp3_path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument("-c", "--commands", type=str, default="./commands.txt", help="")
+    parser.add_argument("-c", "--commands", type=str, default="./Audio Samples/Commands.txt", help="")
     parser.add_argument("-d", "--directory", type=str, default="./Audio Samples/Commands/", help="")
-    
-    arguments = parser.parse_args()
-    generate_command(args=arguments)
+    args = parser.parse_args()
+
+    generate_commands(commands=args.commands, directory=args.directory)
