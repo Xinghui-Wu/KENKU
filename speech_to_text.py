@@ -11,17 +11,16 @@ BAIDU = AipSpeech(appId="17156719",
                   apiKey="aqZ67xX12E6umtTXfw44kYi4", 
                   secretKey="w2fLg5VzQMcumFHgtPpvsXsPAj65FUyw")
 
-IFLYTEK_APPID = "5fb0c096"
-IFLYTEK_SECRET_KEY = "4e5779d189ece9a31a0d526054513cc2"
-
 
 def speech_to_text(directory, transcriptions, output):
-    """[summary]
+    """Use the text-to-speech APIs of various manufactures to recognize audio files.
+    Call various APIs to recognize the audio files in the specified directory.
+    Output the recognition results of various APIs with the target transcriptions in a csv file.
 
     Args:
-        directory ([type]): [description]
-        transcriptions ([type]): [description]
-        output ([type]): [description]
+        directory (str): Input directory of the audio files to be recognized.
+        transcriptions (str): Path of the transcription file of the corresponding audio files.
+        output (str): Output path of the recognition result file in csv format.
     """
     asr_results = [("filename", "transcription", "Baidu", "iFLYTEK")]
 
@@ -45,13 +44,13 @@ def speech_to_text(directory, transcriptions, output):
 
 
 def baidu_speech_to_text(audio_path):
-    """[summary]
+    """Use the text-to-speech API of Baidu to recognize an audio file.
 
     Args:
-        audio_path ([type]): [description]
+        audio_path (str): Path of an audio file to be recognized.
 
     Returns:
-        [type]: [description]
+        str: Recognition result of Baidu's API.
     """
     with open(audio_path, 'rb') as audio_file:
         audio = audio_file.read()
@@ -65,15 +64,17 @@ def baidu_speech_to_text(audio_path):
 
 
 def iflytek_speech_to_text(audio_path):
-    """[summary]
+    """Use the text-to-speech API of iFLYTEK to recognize an audio file.
 
     Args:
-        audio_path ([type]): [description]
+        audio_path (str): Path of an audio file to be recognized.
 
     Returns:
-        [type]: [description]
+        str: Recognition result of iFLYTEK's API.
     """
-    iFlytek_asr = RequestApi(appid=IFLYTEK_APPID, secret_key=IFLYTEK_SECRET_KEY, upload_file_path=audio_path)
+    iFlytek_asr = RequestApi(appid="5fb0c096", 
+                             secret_key="4e5779d189ece9a31a0d526054513cc2", 
+                             upload_file_path=audio_path)
 
     asr_result = iFlytek_asr.all_api_request()
 
@@ -87,10 +88,10 @@ def iflytek_speech_to_text(audio_path):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="")
-    parser.add_argument("-d", "--directory", type=str, default="./Audio Samples/Malicious Samples/", help="")
-    parser.add_argument("-t", "--transcriptions", type=str, default="./Audio Samples/Malicious-Commands.txt", help="")
-    parser.add_argument("-o", "--output", type=str, default="./Audio Samples/ASR-Results.csv", help="")
+    parser = argparse.ArgumentParser(description="Use the text-to-speech APIs of various manufactures to recognize audio files.")
+    parser.add_argument("-d", "--directory", type=str, default="./Audio Samples/Malicious Samples/", help="Input directory of the audio files to be recognized.")
+    parser.add_argument("-t", "--transcriptions", type=str, default="./Audio Samples/Malicious-Commands.txt", help="Path of the transcription file of the corresponding audio files.")
+    parser.add_argument("-o", "--output", type=str, default="./Audio Samples/ASR-Results.csv", help="Output path of the recognition result file in csv format.")
     args = parser.parse_args()
 
     speech_to_text(directory=args.directory, transcriptions=args.transcriptions, output=args.output)
