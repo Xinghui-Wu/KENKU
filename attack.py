@@ -59,9 +59,12 @@ def attack_dataset(commands, songs, pure_samples, malicious_samples, transcripti
             print()
     
     with open(transcriptions, 'r') as transcription_txt:
-        malicious_transcriptions = transcription_txt.readlines()
+        command_transcriptions = transcription_txt.readlines()
     
-    malicious_transcriptions = malicious_transcriptions * len(song_filenames)
+    malicious_transcriptions = list()
+
+    for i in range(len(command_filenames)):
+        malicious_transcriptions.append(command_transcriptions[i] * len(song_filenames))
     
     with open(os.path.join(os.path.dirname(transcriptions), "Malicious-Commands.txt"), 'w') as malicious_transcriptions_txt:
         malicious_transcriptions_txt.writelines(malicious_transcriptions)
