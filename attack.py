@@ -92,7 +92,7 @@ def attack_sample(command_path, song_path, pure_sample_path, malicious_sample_pa
     song, sr = load(song_path)
 
     # Randomly intercept a song fragment of the same length as the command.
-    origin = random.randint(80000, song.size()[1] - command.size()[1] - 80000)
+    origin = random.randint(30 * 16000, song.size()[1] - command.size()[1] - 30 * 16000)
     song = song[:, origin: origin + command.size()[1]]
 
     command = command.to(DEVICE)
