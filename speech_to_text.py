@@ -25,18 +25,25 @@ def speech_to_text(directory, transcriptions, output):
     asr_results = [("filename", "transcription", "Baidu", "iFLYTEK")]
 
     audio_filenames = os.listdir(directory)
-    audio_filenames.sort()
+    audio_filenames.sort(key=lambda filename: os.path.getmtime(os.path.join(directory, filename)))
 
     with open(transcriptions, 'r') as transcriptions_txt:
         transcriptions = transcriptions_txt.readlines()
     
     for i in range(len(audio_filenames)):
+        print("****************************************************************************************************")
+        print(audio_filenames[i])
+        print()
+
         audio_path = os.path.join(directory, audio_filenames[i])
 
         asr_results.append((audio_filenames[i], 
                             transcriptions[i].strip('\n'), 
                             baidu_speech_to_text(audio_path), 
                             iflytek_speech_to_text(audio_path)))
+        
+        print("****************************************************************************************************")
+        print()
 
     with open(output, 'w') as csv_file:
         csv_writer = csv.writer(csv_file)
@@ -82,7 +89,12 @@ def iflytek_speech_to_text(audio_path):
         asr_result = asr_result['data']
 
         if asr_result != None:
-            return eval(asr_result)[0]['onebest']
+            try:
+                asr_result = eval(asr_result)[0]['onebest']
+            except:
+                asr_result = ""
+            finally:
+                return asr_result
 
     return ""
 
