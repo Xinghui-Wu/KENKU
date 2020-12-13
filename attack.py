@@ -14,7 +14,7 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 MFCC_CALCULATOR = MFCC().to(DEVICE)
 
 
-def attack_dataset(commands, songs, pure_samples, malicious_samples, transcriptions, optimizer, penalty_factor, learning_rate, num_iterations):
+def attack_dataset(commands, songs, pure_samples, malicious_samples, transcriptions, interval, optimizer, penalty_factor, learning_rate, num_iterations):
     """Inject commands into songs and generate malicious samples to attack ASR systems.
     The proposed attack method can be abstracted into an optimization model.
     This script uses the integrated optimizers in PyTorch and adjust some hyperparameters, including the penalty factor, learning rate and the number of iterations, to solve the problem.
@@ -29,48 +29,54 @@ def attack_dataset(commands, songs, pure_samples, malicious_samples, transcripti
         pure_samples (str): Output directory of the generated pure samples.
         malicious_samples (str): Output directory of the generated malicious samples.
         transcriptions (str): Path of the transcription file of the commands.
+        interval (float): Time interval to intercept snippets of a song.
         optimizer (str): Integrated optimizers in PyTorch, including Adam and SGD.
         penalty_factor (float): Weight of the norm of the malicious perturbation.
         learning_rate (float): Learning rate used in the specified optimizer.
         num_iterations (int): The maximum number of iterations for the specified optimizer.
     """
     command_filenames = os.listdir(commands)
-    command_filenames.sort()
+    command_filenames.sort(key=lambda filename: os.path.getmtime(os.path.join(commands, filename)))
 
     song_filenames = os.listdir(songs)
-    song_filenames.sort()
+    song_filenames.sort(key=lambda filename: os.path.getmtime(os.path.join(songs, filename)))
 
-    for i in range(len(command_filenames)):
-        command_path = os.path.join(commands, command_filenames[i])
-
-        for j in range(len(song_filenames)):
-            print("****************************************************************************************************")
-            print(command_filenames[i], song_filenames[j])
-            print()
-
-            song_path = os.path.join(songs, song_filenames[j])
-            pure_sample_path = os.path.join(pure_samples, "Pure-Sample-{}-{}.wav".format(i, j))
-            malicious_sample_path = os.path.join(malicious_samples, "Malicious-Sample-{}-{}.wav".format(i, j))
-
-            attack_sample(command_path, song_path, pure_sample_path, malicious_sample_path, 
-                          optimizer, penalty_factor, learning_rate, num_iterations)
-
-            print("****************************************************************************************************")
-            print()
-    
     with open(transcriptions, 'r') as transcription_txt:
         command_transcriptions = transcription_txt.readlines()
     
     malicious_transcriptions = list()
 
     for i in range(len(command_filenames)):
-        malicious_transcriptions.append(command_transcriptions[i] * len(song_filenames))
+        command_path = os.path.join(commands, command_filenames[i])
+        command, sr = load(filepath=command_path)
+
+        for j in range(len(song_filenames)):
+            song_path = os.path.join(songs, song_filenames[j])
+            song, sr = load(filepath=song_path)
+
+            for origin in range(0, song.size()[1] - command.size()[1] + 1, int(16000 * interval)):
+                time_origin = format(origin / 16000, '.1f')
+
+                print("****************************************************************************************************")
+                print(command_filenames[i], song_filenames[j], time_origin)
+                print()
+                
+                pure_sample_path = os.path.join(pure_samples, "Pure-Sample-{}-{}-{}.wav".format(i, j, time_origin))
+                malicious_sample_path = os.path.join(malicious_samples, "Malicious-Sample-{}-{}-{}.wav".format(i, j, time_origin))
+                
+                attack_sample(command_path, song_path, pure_sample_path, malicious_sample_path, origin, 
+                              optimizer, penalty_factor, learning_rate, num_iterations)
+                
+                print("****************************************************************************************************")
+                print()
+
+                malicious_transcriptions.append(command_transcriptions[i])
     
     with open(os.path.join(os.path.dirname(transcriptions), "Malicious-Commands.txt"), 'w') as malicious_transcriptions_txt:
         malicious_transcriptions_txt.writelines(malicious_transcriptions)
 
 
-def attack_sample(command_path, song_path, pure_sample_path, malicious_sample_path, optimizer, penalty_factor, learning_rate, num_iterations):
+def attack_sample(command_path, song_path, pure_sample_path, malicious_sample_path, origin, optimizer, penalty_factor, learning_rate, num_iterations):
     """Inject a command into a song and generate a malicious sample to attack ASR systems.
     The basic idea is to craft a song slightly so that the MFCC of the crafted song can approach the MFCC of the desired command.
     The proposed attack method can be abstracted into an optimization model.
@@ -83,16 +89,16 @@ def attack_sample(command_path, song_path, pure_sample_path, malicious_sample_pa
         song_path (str): Input path of a song file.
         pure_sample_path (str): Output path of the generated pure sample.
         malicious_sample_path (str): Output path of the generated malicious sample.
+        origin (float): Origin of the sampling point to intercept a snippet of the song.
         optimizer (str): Integrated optimizers in PyTorch, including Adam and SGD.
         penalty_factor (float): Weight of the norm of the malicious perturbation.
         learning_rate (float): Learning rate used in the specified optimizer.
         num_iterations (int): The maximum number of iterations for the specified optimizer.
     """
-    command, sr = load(command_path)
-    song, sr = load(song_path)
+    command, sr = load(filepath=command_path)
+    song, sr = load(filepath=song_path)
 
-    # Randomly intercept a song fragment of the same length as the command.
-    origin = random.randint(30 * 16000, song.size()[1] - command.size()[1] - 30 * 16000)
+    # Intercept a song snippet of the same length as the command.
     song = song[:, origin: origin + command.size()[1]]
 
     command = command.to(DEVICE)
@@ -147,11 +153,13 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--pure_samples", type=str, default="./Audio Samples/Pure Samples/", help="Output directory of the generated pure samples.")
     parser.add_argument("-m", "--malicious_samples", type=str, default="./Audio Samples/Malicious Samples/", help="Output directory of the generated malicious samples.")
     parser.add_argument("-t", "--transcriptions", type=str, default="./Audio Samples/Commands.txt", help="Path of the transcription file of the commands.")
+    parser.add_argument("-i", "--interval", type=float, default=0.5, help="Time interval to intercept snippets of a song.")
     parser.add_argument("-o", "--optimizer", type=str, default="Adam", help="Integrated optimizers in PyTorch, including Adam and SGD.")
     parser.add_argument("-f", "--penalty_factor", type=float, default=50, help="Weight of the norm of the malicious perturbation.")
     parser.add_argument("-l", "--learning_rate", type=float, default=0.001, help="Learning rate used in the specified optimizer.")
     parser.add_argument("-n", "--num_iterations", type=int, default=10000, help="The maximum number of iterations for the specified optimizer.")
     args = parser.parse_args()
 
-    attack_dataset(commands=args.commands, songs=args.songs, pure_samples=args.pure_samples, malicious_samples=args.malicious_samples, transcriptions=args.transcriptions, 
+    attack_dataset(commands=args.commands, songs=args.songs, pure_samples=args.pure_samples, malicious_samples=args.malicious_samples, 
+                   transcriptions=args.transcriptions, interval=args.interval, 
                    optimizer=args.optimizer, penalty_factor=args.penalty_factor, learning_rate=args.learning_rate, num_iterations=args.num_iterations)
