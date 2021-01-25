@@ -61,14 +61,14 @@ def google_text_to_speech(text, mp3_path):
         mp3_path (str): Output path of the mp3 file.
     """
     command = gTTS(text=text, lang="en")
-    command.save("./test.mp3")
+    command.save(mp3_path)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Use the text-to-speech API of Baidu to synthesize audio files.")
     parser.add_argument("-c", "--commands", type=str, default="./Audio Samples/Commands.txt", help="Path of the transcription file of the desired commands.")
     parser.add_argument("-d", "--directory", type=str, default="./Audio Samples/Commands/", help="Output directory of some command files.")
-    parser.add_argument("-l", "--language", type=str, default="English", help="Chinese or English.")
+    parser.add_argument("-l", "--language", type=str, default="Chinese", help="Chinese or English.")
     args = parser.parse_args()
 
     generate_commands(commands=args.commands, directory=args.directory, language=args.language)
