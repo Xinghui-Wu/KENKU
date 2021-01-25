@@ -9,6 +9,7 @@ from torchaudio import load, save
 from torchaudio.transforms import MFCC
 
 
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 MFCC_CALCULATOR = MFCC().to(DEVICE)
@@ -36,10 +37,10 @@ def attack_dataset(commands, songs, pure_samples, malicious_samples, transcripti
         num_iterations (int): The maximum number of iterations for the specified optimizer.
     """
     command_filenames = os.listdir(commands)
-    command_filenames.sort(key=lambda filename: os.path.getmtime(os.path.join(commands, filename)))
+    command_filenames.sort()
 
     song_filenames = os.listdir(songs)
-    song_filenames.sort(key=lambda filename: os.path.getmtime(os.path.join(songs, filename)))
+    song_filenames.sort()
 
     with open(transcriptions, 'r') as transcription_txt:
         command_transcriptions = transcription_txt.readlines()
@@ -74,6 +75,13 @@ def attack_dataset(commands, songs, pure_samples, malicious_samples, transcripti
     
     with open(os.path.join(os.path.dirname(transcriptions), "Malicious-Commands.txt"), 'w') as malicious_transcriptions_txt:
         malicious_transcriptions_txt.writelines(malicious_transcriptions)
+    
+    with open(os.path.join(os.path.dirname(transcriptions), "parameters.txt"), 'w') as parameters_txt:
+        parameters_txt.writelines(["interval = {}\n".format(interval), 
+                                   "optimizer = {}\n".format(optimizer), 
+                                   "penalty_factor = {}\n".format(penalty_factor), 
+                                   "learning_rate = {}\n".format(learning_rate), 
+                                   "num_iterations = {}\n".format(num_iterations)])
 
 
 def attack_sample(command_path, song_path, pure_sample_path, malicious_sample_path, origin, optimizer, penalty_factor, learning_rate, num_iterations):
@@ -155,7 +163,7 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--transcriptions", type=str, default="./Audio Samples/Commands.txt", help="Path of the transcription file of the commands.")
     parser.add_argument("-i", "--interval", type=float, default=0.5, help="Time interval to intercept snippets of a song.")
     parser.add_argument("-o", "--optimizer", type=str, default="Adam", help="Integrated optimizers in PyTorch, including Adam and SGD.")
-    parser.add_argument("-f", "--penalty_factor", type=float, default=50, help="Weight of the norm of the malicious perturbation.")
+    parser.add_argument("-f", "--penalty_factor", type=float, default=75, help="Weight of the norm of the malicious perturbation.")
     parser.add_argument("-l", "--learning_rate", type=float, default=0.001, help="Learning rate used in the specified optimizer.")
     parser.add_argument("-n", "--num_iterations", type=int, default=10000, help="The maximum number of iterations for the specified optimizer.")
     args = parser.parse_args()
