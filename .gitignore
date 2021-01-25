@@ -3,9 +3,13 @@
 .vscode/
 
 # Audio files
-Audio Samples/
+Audio Samples*/
 *.wav
 *.mp3
+
+huawei/
+
+*.out
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
