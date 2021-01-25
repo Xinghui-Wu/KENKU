@@ -59,16 +59,21 @@ class SliceIdGenerator:
 
 
 class RequestApi(object):
-    def __init__(self, appid, secret_key, upload_file_path):
+    def __init__(self, appid, secret_key, upload_file_path, language):
         self.appid = appid
         self.secret_key = secret_key
         self.upload_file_path = upload_file_path
+        if language == "Chinese":
+            self.language = "cn"
+        else:
+            self.language = "en"
 
     # 根据不同的apiname生成不同的参数,本示例中未使用全部参数您可在官网(https://doc.xfyun.cn/rest_api/%E8%AF%AD%E9%9F%B3%E8%BD%AC%E5%86%99.html)查看后选择适合业务场景的进行更换
     def gene_params(self, apiname, taskid=None, slice_id=None):
         appid = self.appid
         secret_key = self.secret_key
         upload_file_path = self.upload_file_path
+        language = self.language
         ts = str(int(time.time()))
         m2 = hashlib.md5()
         m2.update((appid + ts).encode('utf-8'))
@@ -91,23 +96,27 @@ class RequestApi(object):
             param_dict['file_len'] = str(file_len)
             param_dict['file_name'] = file_name
             param_dict['slice_num'] = str(slice_num)
+            param_dict['language'] = language
         elif apiname == api_upload:
             param_dict['app_id'] = appid
             param_dict['signa'] = signa
             param_dict['ts'] = ts
             param_dict['task_id'] = taskid
             param_dict['slice_id'] = slice_id
+            param_dict['language'] = language
         elif apiname == api_merge:
             param_dict['app_id'] = appid
             param_dict['signa'] = signa
             param_dict['ts'] = ts
             param_dict['task_id'] = taskid
             param_dict['file_name'] = file_name
+            param_dict['language'] = language
         elif apiname == api_get_progress or apiname == api_get_result:
             param_dict['app_id'] = appid
             param_dict['signa'] = signa
             param_dict['ts'] = ts
             param_dict['task_id'] = taskid
+            param_dict['language'] = language
         return param_dict
 
     # 请求和结果解析，结果中各个字段的含义可参考：https://doc.xfyun.cn/rest_api/%E8%AF%AD%E9%9F%B3%E8%BD%AC%E5%86%99.html
@@ -203,5 +212,6 @@ class RequestApi(object):
 if __name__ == '__main__':
     api = RequestApi(appid="5fb0c096", 
                      secret_key="4e5779d189ece9a31a0d526054513cc2", 
-                     upload_file_path=r"./Audio Samples/Commands/Command-0.wav")
+                     upload_file_path=r"./Audio Samples/Commands/Command-0.wav", 
+                     language="Chinese")
     asr_result = api.all_api_request()
