@@ -7,8 +7,7 @@ Audio Samples*/
 *.wav
 *.mp3
 
-huawei/
-
+# Logs
 *.out
 
 # Byte-compiled / optimized / DLL files
@@ -122,6 +121,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+CommanderMusic/
 
 # Spyder project settings
 .spyderproject
