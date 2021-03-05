@@ -63,6 +63,11 @@ def google_text_to_speech(text, mp3_path):
     command = gTTS(text=text, lang="en")
     command.save(mp3_path)
 
+    command = AudioSegment.from_file(file=mp3_path, format='mp3')
+    command = command.set_channels(1)
+    command = command.set_frame_rate(16000)
+    command.export(mp3_path, format='mp3')
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Use the text-to-speech API of Baidu to synthesize audio files.")
