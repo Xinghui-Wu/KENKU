@@ -9,12 +9,6 @@ from torchaudio import load, save
 from torchaudio.transforms import MFCC
 
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-MFCC_CALCULATOR = MFCC().to(DEVICE)
-
-
 def attack_dataset(commands, songs, pure_samples, malicious_samples, transcriptions, interval, optimizer, penalty_factor, learning_rate, num_iterations):
     """Inject commands into songs and generate malicious samples to attack ASR systems.
     The proposed attack method can be abstracted into an optimization model.
@@ -157,16 +151,22 @@ def attack_sample(command_path, song_path, pure_sample_path, malicious_sample_pa
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Inject commands into songs and generate malicious samples to attack ASR systems.")
     parser.add_argument("-c", "--commands", type=str, default="./Audio Samples/Commands/", help="Input directory of some command files.")
-    parser.add_argument("-s", "--songs", type=str, default="./Audio Samples/Songs/", help="Input directory of some song files.")
+    parser.add_argument("-s", "--songs", type=str, default="./Audio Samples/Carriers/", help="Input directory of some song files.")
     parser.add_argument("-p", "--pure_samples", type=str, default="./Audio Samples/Pure Samples/", help="Output directory of the generated pure samples.")
     parser.add_argument("-m", "--malicious_samples", type=str, default="./Audio Samples/Malicious Samples/", help="Output directory of the generated malicious samples.")
     parser.add_argument("-t", "--transcriptions", type=str, default="./Audio Samples/Commands.txt", help="Path of the transcription file of the commands.")
-    parser.add_argument("-i", "--interval", type=float, default=0.5, help="Time interval to intercept snippets of a song.")
+    parser.add_argument("-i", "--interval", type=float, default=1, help="Time interval to intercept snippets of a song.")
     parser.add_argument("-o", "--optimizer", type=str, default="Adam", help="Integrated optimizers in PyTorch, including Adam and SGD.")
     parser.add_argument("-f", "--penalty_factor", type=float, default=75, help="Weight of the norm of the malicious perturbation.")
     parser.add_argument("-l", "--learning_rate", type=float, default=0.001, help="Learning rate used in the specified optimizer.")
     parser.add_argument("-n", "--num_iterations", type=int, default=10000, help="The maximum number of iterations for the specified optimizer.")
+    parser.add_argument("-g", "--gpu", type=str, default='0', help="GPU index to use.")
     args = parser.parse_args()
+
+    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+    DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    MFCC_CALCULATOR = MFCC().to(DEVICE)
 
     attack_dataset(commands=args.commands, songs=args.songs, pure_samples=args.pure_samples, malicious_samples=args.malicious_samples, 
                    transcriptions=args.transcriptions, interval=args.interval, 
