@@ -1,6 +1,5 @@
 import argparse
 import os
-import random
 
 import torch
 from torch.autograd import Variable
@@ -24,7 +23,7 @@ def attack_dataset(commands, songs, pure_samples, malicious_samples, transcripti
         pure_samples (str): Output directory of the generated pure samples.
         malicious_samples (str): Output directory of the generated malicious samples.
         transcriptions (str): Path of the transcription file of the commands.
-        interval (float): Time interval to intercept snippets of a song.
+        interval (float): Time interval to intercept a song.
         optimizer (str): Integrated optimizers in PyTorch, including Adam and SGD.
         penalty_factor (float): Weight of the norm of the malicious perturbation.
         learning_rate (float): Learning rate used in the specified optimizer.
@@ -79,26 +78,26 @@ def attack_dataset(commands, songs, pure_samples, malicious_samples, transcripti
 
 
 def attack_sample(command_path, song_path, pure_sample_path, malicious_sample_path, origin, optimizer, penalty_factor, learning_rate, num_iterations):
-    """Inject a command into a song and generate a malicious sample to attack ASR systems.
-    The basic idea is to craft a song slightly so that the MFCC of the crafted song can approach the MFCC of the desired command.
+    """Inject a command into a song clip and generate a malicious sample to attack ASR systems.
+    The basic idea is to craft a song slightly so that the MFCC of the crafted song clip can approach the MFCC of the desired command.
     The proposed attack method can be abstracted into an optimization model.
     This script uses the integrated optimizers in PyTorch and adjust some hyperparameters, including the penalty factor, learning rate and the number of iterations, to solve the problem.
-    This method accepts a input command file and a input song file.
-    Inject the command into the song to generate the output pure sample and malicious sample respectively.
+    This method accepts a input command file and a input song file and the clip origin.
+    Inject the command into the song clip to generate the output pure sample and malicious sample respectively.
 
     Args:
         command_path (str): Input path of a command file.
         song_path (str): Input path of a song file.
         pure_sample_path (str): Output path of the generated pure sample.
         malicious_sample_path (str): Output path of the generated malicious sample.
-        origin (float): Origin of the sampling point to intercept a snippet of the song.
+        origin (float): Origin of the sampling point to intercept the song.
         optimizer (str): Integrated optimizers in PyTorch, including Adam and SGD.
         penalty_factor (float): Weight of the norm of the malicious perturbation.
         learning_rate (float): Learning rate used in the specified optimizer.
         num_iterations (int): The maximum number of iterations for the specified optimizer.
     """
-    command, sr = load(filepath=command_path)
-    song, sr = load(filepath=song_path)
+    command, _ = load(filepath=command_path)
+    song, _ = load(filepath=song_path)
 
     # Intercept a song snippet of the same length as the command.
     song = song[:, origin: origin + command.size()[1]]
@@ -155,19 +154,23 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--pure_samples", type=str, default="./Audio Samples/Pure Samples/", help="Output directory of the generated pure samples.")
     parser.add_argument("-m", "--malicious_samples", type=str, default="./Audio Samples/Malicious Samples/", help="Output directory of the generated malicious samples.")
     parser.add_argument("-t", "--transcriptions", type=str, default="./Audio Samples/Commands.txt", help="Path of the transcription file of the commands.")
-    parser.add_argument("-i", "--interval", type=float, default=1, help="Time interval to intercept snippets of a song.")
+    parser.add_argument("-i", "--interval", type=float, default=1, help="Time interval to intercept a song.")
     parser.add_argument("-o", "--optimizer", type=str, default="Adam", help="Integrated optimizers in PyTorch, including Adam and SGD.")
     parser.add_argument("-f", "--penalty_factor", type=float, default=75, help="Weight of the norm of the malicious perturbation.")
     parser.add_argument("-l", "--learning_rate", type=float, default=0.001, help="Learning rate used in the specified optimizer.")
     parser.add_argument("-n", "--num_iterations", type=int, default=10000, help="The maximum number of iterations for the specified optimizer.")
     parser.add_argument("-g", "--gpu", type=str, default='0', help="GPU index to use.")
+    parser.add_argument("--n_mfcc", type=int, default=40, help="The MFCC parameter to decide the number of the coefficients.")
+    
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    MFCC_CALCULATOR = MFCC().to(DEVICE)
+    MFCC_CALCULATOR = MFCC(args.n_mfcc).to(DEVICE)
 
-    attack_dataset(commands=args.commands, songs=args.songs, pure_samples=args.pure_samples, malicious_samples=args.malicious_samples, 
+    attack_dataset(commands=args.commands, songs=args.songs, 
+                   pure_samples=args.pure_samples, malicious_samples=args.malicious_samples, 
                    transcriptions=args.transcriptions, interval=args.interval, 
-                   optimizer=args.optimizer, penalty_factor=args.penalty_factor, learning_rate=args.learning_rate, num_iterations=args.num_iterations)
+                   optimizer=args.optimizer, penalty_factor=args.penalty_factor, 
+                   learning_rate=args.learning_rate, num_iterations=args.num_iterations)
