@@ -7,9 +7,10 @@ from gtts import gTTS
 from pydub import AudioSegment
 
 
-BAIDU = AipSpeech(appId="17156719", 
-                  apiKey="aqZ67xX12E6umtTXfw44kYi4", 
-                  secretKey="w2fLg5VzQMcumFHgtPpvsXsPAj65FUyw")
+# Set the Baidu AI client with the account information.
+BAIDU = AipSpeech(appId="", 
+                  apiKey="", 
+                  secretKey="")
 
 
 def generate_commands(commands, directory, language):
@@ -17,7 +18,7 @@ def generate_commands(commands, directory, language):
 
     Args:
         commands (str): Path of the transcription file of the desired commands.
-        directory (str): Output directory of some command files.
+        directory (str): Output directory of the command audio files.
         language (str): Chinese or English.
     """
     with open(commands, 'r') as commands_txt:
@@ -70,10 +71,11 @@ def google_text_to_speech(text, mp3_path):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Use the text-to-speech API of Baidu to synthesize audio files.")
+    parser = argparse.ArgumentParser(description="Use the text-to-speech APIs of Baidu and Google to synthesize audio files.")
     parser.add_argument("-c", "--commands", type=str, default="./Audio Samples/Commands.txt", help="Path of the transcription file of the desired commands.")
-    parser.add_argument("-d", "--directory", type=str, default="./Audio Samples/Commands/", help="Output directory of some command files.")
+    parser.add_argument("-d", "--directory", type=str, default="./Audio Samples/Commands/", help="Output directory of the command audio files.")
     parser.add_argument("-l", "--language", type=str, default="Chinese", help="Chinese or English.")
+    
     args = parser.parse_args()
 
     generate_commands(commands=args.commands, directory=args.directory, language=args.language)
