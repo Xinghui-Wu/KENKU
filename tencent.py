@@ -53,8 +53,3 @@ def tencent_asr(secret_id, secret_key, audio_path, language):
     except TencentCloudSDKException as err: 
         print(err)
         return ""
-
-
-if __name__ == "__main__":
-    tencent_asr(secret_id="AKIDVs2ze24Afy1ojor8MVNyHYaLp3IItTdK", secret_key="buyf8KmxmKbbKcdOsugBPKhtoagWrviG",
-                audio_path="./Command-0.wav", language="Chinese")

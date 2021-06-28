@@ -209,9 +209,3 @@ class RequestApi(object):
 
 # 注意：如果出现requests模块报错："NoneType" object has no attribute 'read', 请尝试将requests模块更新到2.20.0或以上版本(本demo测试版本为2.20.0)
 # 输入讯飞开放平台的appid，secret_key和待转写的文件路径
-if __name__ == '__main__':
-    api = RequestApi(appid="5fb0c096", 
-                     secret_key="4e5779d189ece9a31a0d526054513cc2", 
-                     upload_file_path=r"./Audio Samples/Commands/Command-0.wav", 
-                     language="Chinese")
-    asr_result = api.all_api_request()
