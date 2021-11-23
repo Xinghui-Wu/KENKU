@@ -14,7 +14,7 @@ from utils import read_csv, write_csv, get_feature_parameters
 logging.basicConfig(level=logging.INFO, format="%(asctime)s \t %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
 
-def hidden_voice_command_attack(feature, command_csv, num_iterations):
+def hidden_voice_command_attack(feature, command_csv, dir, num_iterations):
     assert feature in (1, 2, 3)
 
     feature_parameters = get_feature_parameters(feature)
@@ -24,9 +24,8 @@ def hidden_voice_command_attack(feature, command_csv, num_iterations):
     hidden_voice_command_table = list()
 
     for command_info in command_table:
-        command_dir = os.path.dirname(command_info[0])
         command_name = os.path.basename(command_info[0])[: -4]
-        hidden_voice_command_dir = os.path.join(command_dir, "{}-{}".format(command_name, feature))
+        hidden_voice_command_dir = os.path.join(dir, "{}-{}".format(command_name, feature))
 
         if not os.path.exists(hidden_voice_command_dir):
             os.makedirs(hidden_voice_command_dir)
@@ -61,7 +60,7 @@ def hidden_voice_command_attack(feature, command_csv, num_iterations):
             finally:
                 logging.info("")
     
-    write_csv(csv_path=os.path.join(command_dir, "hidden-voice-commands-{}.csv".format(feature)), lines=hidden_voice_command_table)
+    write_csv(csv_path=os.path.join(dir, "hidden-voice-commands-{}.csv".format(feature)), lines=hidden_voice_command_table)
 
 
 def audio_to_feature(audio, feature, feature_parameters_dict):
@@ -93,9 +92,10 @@ def feature_to_audio(audio_feature, feature, feature_parameters_dict):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
     parser.add_argument("-f", "--feature", type=int, default=3, help="")
-    parser.add_argument("-c", "--command_csv", type=str, default="hidden-voice-commands/commands.csv", help="")
+    parser.add_argument("-c", "--command_csv", type=str, default="commands/commands.csv", help="")
+    parser.add_argument("-d", "--dir", type=str, default="hidden-voice-commands/", help="")
     parser.add_argument("-n", "--num_iterations", type=int, default=10, help="")
 
     args = parser.parse_args()
 
-    hidden_voice_command_attack(feature=args.feature, command_csv=args.command_csv, num_iterations=args.num_iterations)
+    hidden_voice_command_attack(feature=args.feature, command_csv=args.command_csv, dir=args.dir, num_iterations=args.num_iterations)
