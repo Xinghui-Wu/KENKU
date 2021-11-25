@@ -1,14 +1,30 @@
-# IDEs and Editors
+# Editors and IDEs
 .idea/
 .vscode/
 
 # Audio files
-Audio Samples*/
 *.wav
 *.mp3
+commands*/
+songs*/
+hidden-voice-commands*/
+integrated-commands*/
+
+# Projects and models
+white_box_models/
+speechbrain/
+DeepSpeech/
+deepspeech.pytorch/
+model_checkpoints/
 
 # Logs
 *.out
+*.txt
+*.csv
+
+# Experiments
+mturk/
+figures/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
