@@ -13,7 +13,7 @@ if sys.version_info[0] == 3:
 
 
 #本地文件方式请求
-def tencent_asr(secret_id, secret_key, audio_path, language):
+def tencent(secret_id, secret_key, audio_path, language):
     try: 
         #重要，此处<Your SecretId><Your SecretKey>需要替换成客户自己的账号信息，获取方法：
         #https://cloud.tencent.com/product/asr/getting-started
@@ -37,7 +37,7 @@ def tencent_asr(secret_id, secret_key, audio_path, language):
         req._deserialize(params)
         req.DataLen = len(content)
         req.Data = content
-        if language == "Chinese":
+        if language == 1:
             req.EngSerViceType = "16k_zh"
         else:
             req.EngSerViceType = "16k_en"

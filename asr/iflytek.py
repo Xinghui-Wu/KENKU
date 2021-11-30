@@ -58,12 +58,12 @@ class SliceIdGenerator:
         return self.__ch
 
 
-class RequestApi(object):
+class iFLYTEK(object):
     def __init__(self, appid, secret_key, upload_file_path, language):
         self.appid = appid
         self.secret_key = secret_key
         self.upload_file_path = upload_file_path
-        if language == "Chinese":
+        if language == 1:
             self.language = "cn"
         else:
             self.language = "en"

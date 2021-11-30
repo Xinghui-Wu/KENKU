@@ -5,7 +5,7 @@ from aliyunsdkcore.client import AcsClient
 from aliyunsdkcore.request import CommonRequest
 
 
-def alibaba_asr(app_key, access_key_id, access_key_secret, audio_path):
+def alibaba(app_key, access_key_id, access_key_secret, audio_path):
     appKey = app_key
 
     client = AcsClient(access_key_id, access_key_secret, "cn-shanghai")
