@@ -15,18 +15,16 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s \t %(message)s", dat
 
 
 def integrated_command_attack(feature, command_csv, song_dir, dir, interval, optimizer, penalty, learning_rate, num_iterations):
-    assert feature in (1, 2, 3)
-
     feature_parameters = get_feature_parameters(feature)
 
     # The headers of the CSV file are defined as the absolute path and transcription of each and every command file.
     command_table = read_csv(csv_path=command_csv)
-    integrated_command_table = list()
+    integrated_command_table = [["audio path", "transcription", "loss_feature", "loss_delta", "loss", "SNR"]]
 
     song_filenames = os.listdir(song_dir)
     song_filenames.sort()
 
-    for command_info in command_table:
+    for command_info in command_table[1: ]:
         command_name = os.path.basename(command_info[0])[: -4]
         integrated_command_dir = os.path.join(dir, "0", "{}-{}".format(command_name, feature))
         song_clip_dir = os.path.join(dir, "1", "{}-{}".format(command_name, feature))
@@ -144,7 +142,7 @@ def attack_sample(feature_extractor, command_path, song_path, integrated_command
     ax[2].plot(loss_trend.detach().cpu())
     fig.savefig("{}.png".format(integrated_command_path))
 
-    return loss_feature, loss_delta, loss, snr
+    return format(loss_feature.data, '.4f'), format(loss_delta.data, '.4f'), format(loss, '.4f'), format(snr, '.2f')
 
 
 if __name__ == "__main__":

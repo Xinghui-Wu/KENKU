@@ -16,15 +16,13 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s \t %(message)s", dat
 
 
 def hidden_voice_command_attack(feature, command_csv, dir, num_iterations, interval):
-    assert feature in (1, 2, 3)
-
     feature_parameters = get_feature_parameters(feature)
 
     # The headers of the CSV file are defined as the absolute path and transcription of each and every command file.
     command_table = read_csv(csv_path=command_csv)
-    hidden_voice_command_table = list()
+    hidden_voice_command_table = [["audio path", "transcription", "loss", "SNR"]]
 
-    for command_info in command_table:
+    for command_info in command_table[1: ]:
         command_name = os.path.basename(command_info[0])[: -4]
         hidden_voice_command_dir = os.path.join(dir, "{}-{}".format(command_name, feature))
 
@@ -61,7 +59,7 @@ def hidden_voice_command_attack(feature, command_csv, dir, num_iterations, inter
                     snr_trend[i] = snr
 
                     if (i + 1) % interval == 0:
-                        hidden_voice_command_table.append([hidden_voice_command_path, command_info[1], loss, snr])
+                        hidden_voice_command_table.append([hidden_voice_command_path, command_info[1], format(loss, '.4f'), format(snr, '.2f')])
                         write(file=hidden_voice_command_path, data=hidden_voice_command, samplerate=16000)
                     
                     logging.info("loss = {:.4f}, snr = {:.2f}".format(loss, snr))
@@ -95,7 +93,7 @@ def audio_to_feature(audio, feature, feature_parameters_dict):
 
 def feature_to_audio(audio_feature, feature, feature_parameters_dict):
     if feature == 1:
-        return griffinlim(S=audio_feature)
+        return griffinlim(S=audio_feature, n_iter=16)
     elif feature == 2:
         return mel_to_audio(M=audio_feature, sr=16000, 
                             n_fft=feature_parameters_dict["n_fft"])
@@ -111,7 +109,7 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--command_csv", type=str, default="commands/commands.csv", help="")
     parser.add_argument("-d", "--dir", type=str, default="hidden-voice-commands/", help="")
     parser.add_argument("-n", "--num_iterations", type=int, default=10000, help="")
-    parser.add_argument("-i", "--interval", type=int, default=100, help="")
+    parser.add_argument("-i", "--interval", type=int, default=1000, help="")
 
     args = parser.parse_args()
 
