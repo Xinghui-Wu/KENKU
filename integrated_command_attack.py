@@ -45,11 +45,12 @@ def integrated_command_attack(feature, command_csv, song_dir, dir, interval, opt
 
                 for origin in range(0, song.size()[1] - command.size()[1] + 1, int(16000 * interval)):
                     time_origin = format(origin / 16000, '.1f')
-                    integrated_command_filename = "{}-{}-{}-{}-{}-{}-{}-{}-{}-{}.wav".format(command_name, song_filename, time_origin, 
-                                                                                             feature_parameters_dict.get("n_mfcc", ""), 
-                                                                                             feature_parameters_dict.get("n_mels", ""), 
-                                                                                             feature_parameters_dict.get("n_fft", ""), 
-                                                                                             optimizer, penalty, learning_rate, num_iterations)
+                    integrated_command_filename = "{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}.wav".format(command_name, song_filename, time_origin, 
+                                                                                                feature_parameters_dict.get("n_mfcc", ""), 
+                                                                                                feature_parameters_dict.get("n_mels", ""), 
+                                                                                                feature_parameters_dict.get("n_fft"), 
+                                                                                                feature_parameters_dict.get("hop_length"), 
+                                                                                                optimizer, penalty, learning_rate, num_iterations)
                     integrated_command_path = os.path.join(integrated_command_dir, integrated_command_filename)
                     song_clip_path = os.path.join(song_clip_dir, integrated_command_filename)
                     
@@ -65,13 +66,16 @@ def integrated_command_attack(feature, command_csv, song_dir, dir, interval, opt
 
 def get_feature_extractor(feature, feature_parameters_dict):
     if feature == 1:
-        return Spectrogram(n_fft=feature_parameters_dict["n_fft"]).to(DEVICE)
+        return Spectrogram(n_fft=feature_parameters_dict["n_fft"], hop_length=feature_parameters_dict.get("hop_length")).to(DEVICE)
     elif feature == 2:
         return MelSpectrogram(n_mels=feature_parameters_dict["n_mels"], 
-                              n_fft=feature_parameters_dict["n_fft"]).to(DEVICE)
+                              n_fft=feature_parameters_dict["n_fft"], 
+                              hop_length=feature_parameters_dict.get("hop_length")).to(DEVICE)
     else:
         return MFCC(n_mfcc=feature_parameters_dict["n_mfcc"], 
-                    melkwargs={"n_mels": feature_parameters_dict["n_mels"], "n_fft": feature_parameters_dict["n_fft"]}).to(DEVICE)
+                    melkwargs={"n_mels": feature_parameters_dict["n_mels"], 
+                               "n_fft": feature_parameters_dict["n_fft"], 
+                               "hop_length": feature_parameters_dict.get("hop_length")}).to(DEVICE)
 
 
 def attack_sample(feature_extractor, command_path, song_path, integrated_command_path, song_clip_path, origin, penalty, optimizer, learning_rate, num_iterations):

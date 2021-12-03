@@ -42,10 +42,11 @@ def hidden_voice_command_attack(feature, command_csv, dir, num_iterations, inter
             try:
                 for i in range(num_iterations):
                     hidden_voice_command_path = os.path.join(hidden_voice_command_dir, 
-                                                            "{}-{}-{}-{}-{}.wav".format(command_name, 
-                                                                                        feature_parameters_dict.get("n_mfcc", ""), 
-                                                                                        feature_parameters_dict.get("n_mels", ""), 
-                                                                                        feature_parameters_dict.get("n_fft", ""), i + 1))
+                                                            "{}-{}-{}-{}-{}-{}.wav".format(command_name, 
+                                                                                           feature_parameters_dict.get("n_mfcc", ""), 
+                                                                                           feature_parameters_dict.get("n_mels", ""), 
+                                                                                           feature_parameters_dict.get("n_fft"), 
+                                                                                           feature_parameters_dict.get("hop_length"), i + 1))
                     
                     logging.info("Start to generate {}".format(hidden_voice_command_path))
 
@@ -79,28 +80,32 @@ def hidden_voice_command_attack(feature, command_csv, dir, num_iterations, inter
 
 def audio_to_feature(audio, feature, feature_parameters_dict):
     if feature == 1:
-        return np.abs(stft(y=audio, n_fft=feature_parameters_dict["n_fft"]))
+        return np.abs(stft(y=audio, n_fft=feature_parameters_dict["n_fft"], hop_length=feature_parameters_dict.get("hop_length")))
     elif feature == 2:
         return melspectrogram(y=audio, sr=16000, 
                               n_mels=feature_parameters_dict["n_mels"], 
-                              n_fft=feature_parameters_dict["n_fft"])
+                              n_fft=feature_parameters_dict["n_fft"], 
+                              hop_length=feature_parameters_dict.get("hop_length"))
     else:
         return mfcc(y=audio, sr=16000, 
                     n_mfcc=feature_parameters_dict["n_mfcc"], 
                     n_mels=feature_parameters_dict["n_mels"], 
-                    n_fft=feature_parameters_dict["n_fft"])
+                    n_fft=feature_parameters_dict["n_fft"], 
+                    hop_length=feature_parameters_dict.get("hop_length"))
 
 
 def feature_to_audio(audio_feature, feature, feature_parameters_dict):
     if feature == 1:
-        return griffinlim(S=audio_feature, n_iter=16)
+        return griffinlim(S=audio_feature, n_iter=16, hop_length=feature_parameters_dict.get("hop_length"))
     elif feature == 2:
         return mel_to_audio(M=audio_feature, sr=16000, 
-                            n_fft=feature_parameters_dict["n_fft"])
+                            n_fft=feature_parameters_dict["n_fft"], 
+                            hop_length=feature_parameters_dict.get("hop_length"))
     else:
         return mfcc_to_audio(mfcc=audio_feature, sr=16000, 
                              n_mels=feature_parameters_dict["n_mels"], 
-                             n_fft=feature_parameters_dict["n_fft"])
+                             n_fft=feature_parameters_dict["n_fft"], 
+                             hop_length=feature_parameters_dict.get("hop_length"))
 
 
 if __name__ == "__main__":
