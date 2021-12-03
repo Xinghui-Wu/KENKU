@@ -19,7 +19,7 @@ def black_box_asr(input_csv, output_csv, language, vendor):
         csv_writer = csv.writer(csv_file)
 
         title = [["Google", "Microsoft", "Amazon", "IBM"], ["Baidu", "Alibaba", "Tencent", "iFLYTEK"]]
-        audio_table[0].extend(title[language])
+        audio_table[0].extend(title[vendor])
         csv_writer.writerow(audio_table[0])
         
         for audio_info in audio_table[1: ]:
@@ -60,7 +60,7 @@ def alibaba_asr(audio_path, language):
     else:
         app_key = ACCOUNT["Alibaba"]["app_key_zh"]
     
-    asr_result = alibaba(app_key, ACCOUNT["Alibaba"]["access_key_id"], ACCOUNT["Alibaba"]["access_key_id"], audio_path)
+    asr_result = alibaba(app_key, ACCOUNT["Alibaba"]["access_key_id"], ACCOUNT["Alibaba"]["access_key_secret"], audio_path)
     
     return asr_result
 
