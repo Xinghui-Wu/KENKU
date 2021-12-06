@@ -1,5 +1,7 @@
 import argparse
 import json
+import logging
+import traceback
 
 from aip import AipSpeech
 
@@ -7,6 +9,8 @@ from utils import *
 from asr.alibaba import alibaba
 from asr.tencent import tencent
 from asr.iflytek import iFLYTEK
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s \t %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
 
 def black_box_asr(input_csv, output_csv, language, vendor):
@@ -24,14 +28,21 @@ def black_box_asr(input_csv, output_csv, language, vendor):
         
         for audio_info in audio_table[1: ]:
             audio_path = audio_info[0]
-
-            if vendor == 0:
-                asr_results = ["Google", "Microsoft", "Amazon", "IBM"]
-            else:
-                asr_results = [baidu_asr(audio_path, language), alibaba_asr(audio_path, language), tencent_asr(audio_path, language), iflytek_asr(audio_path, language)]
             
-            audio_info.extend(asr_results)
-            csv_writer.writerow(audio_info)
+            logging.info("Start to transcribe {}".format(audio_path))
+
+            try:
+                if vendor == 0:
+                    asr_results = ["Google", "Microsoft", "Amazon", "IBM"]
+                else:
+                    asr_results = [baidu_asr(audio_path, language), alibaba_asr(audio_path, language), tencent_asr(audio_path, language), iflytek_asr(audio_path, language)]
+            
+                audio_info.extend(asr_results)
+            except:
+                logging.error("Error in {}".format(audio_path))
+                traceback.print_exc()
+            finally:
+                csv_writer.writerow(audio_info)
 
 
 def baidu_asr(audio_path, language):
