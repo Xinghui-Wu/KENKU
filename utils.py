@@ -18,24 +18,30 @@ def write_csv(csv_path, lines):
 
 
 def get_feature_parameters(feature):
+    assert feature in (1, 2, 3)
+    
     feature_parameters = list()
 
-    n_mfcc_list = (12, 13, 20, 26, 40)
-    n_mels_list = (64, 128, 256, 512)
-    n_fft_list = (400, 512, 1024, 2048)
+    n_mfcc_list = (20, )
+    n_mels_list = (40, 80, 128)
+    n_fft_list = (400, 512)
+    hop_length_ratio = (0.5, )
 
     if feature == 1:
         for n_fft in n_fft_list:
-            feature_parameters.append({"n_fft": n_fft})
+            for hop_length in hop_length_ratio:
+                feature_parameters.append({"n_fft": n_fft, "hop_length": int(n_fft * hop_length)})
     elif feature == 2:
         for n_mels in n_mels_list:
             for n_fft in n_fft_list:
-                feature_parameters.append({"n_mels": n_mels, "n_fft": n_fft})
+                for hop_length in hop_length_ratio:
+                    feature_parameters.append({"n_mels": n_mels, "n_fft": n_fft, "hop_length": int(n_fft * hop_length)})
     else:
         for n_mfcc in n_mfcc_list:
             for n_mels in n_mels_list:
                 for n_fft in n_fft_list:
-                    feature_parameters.append({"n_mfcc": n_mfcc, "n_mels": n_mels, "n_fft": n_fft})
+                    for hop_length in hop_length_ratio:
+                        feature_parameters.append({"n_mfcc": n_mfcc, "n_mels": n_mels, "n_fft": n_fft, "hop_length": int(n_fft * hop_length)})
     
     return feature_parameters
 
