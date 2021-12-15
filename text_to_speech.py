@@ -2,12 +2,15 @@ import argparse
 import json
 import os
 import random
+import logging
 
 from gtts import gTTS
 from aip import AipSpeech
 from pydub import AudioSegment
 
 from utils import *
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s \t %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
 
 def text_to_speech(commands, dir, language):
@@ -27,6 +30,8 @@ def text_to_speech(commands, dir, language):
         filename = str(i + 1).zfill(length)
         mp3_path = os.path.abspath(os.path.join(dir, "{}.mp3".format(filename)))
         wav_path = os.path.abspath(os.path.join(dir, "{}.wav".format(filename)))
+
+        logging.info("Synthesize {}: {}".format(filename, text))
 
         if language == 0:
             google_text_to_speech(text, mp3_path)
