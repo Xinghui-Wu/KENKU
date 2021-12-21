@@ -4,14 +4,23 @@ import logging
 
 import matplotlib.pyplot as plt
 import torch
+from torch.tensor import Tensor
 from torch.autograd import Variable
 from torch.optim import Adam, SGD
 from torchaudio import load, save
-from torchaudio.transforms import MFCC, MelSpectrogram, Spectrogram
+from torchaudio.transforms import MFCC, MelSpectrogram, Spectrogram, AmplitudeToDB
 
 from utils import *
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s \t %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+
+
+class DBSpectrogram(Spectrogram):
+    def __init__(self, n_fft, hop_length):
+        super().__init__(n_fft=n_fft, hop_length=hop_length)
+    
+    def forward(self, waveform: Tensor) -> Tensor:
+        return AMPLITUDE_TO_DB(super().forward(waveform))
 
 
 def integrated_command_attack(feature, command_csv, song_dir, dir, interval, optimizer, penalty, learning_rate, num_iterations):
@@ -45,7 +54,7 @@ def integrated_command_attack(feature, command_csv, song_dir, dir, interval, opt
 
                 for origin in range(0, song.size()[1] - command.size()[1] + 1, int(16000 * interval)):
                     time_origin = format(origin / 16000, '.1f')
-                    integrated_command_filename = "{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}.wav".format(command_name, song_filename, time_origin, 
+                    integrated_command_filename = "{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}.wav".format(command_name, song_filename[: -4], time_origin, 
                                                                                                 feature_parameters_dict.get("n_mfcc", ""), 
                                                                                                 feature_parameters_dict.get("n_mels", ""), 
                                                                                                 feature_parameters_dict.get("n_fft"), 
@@ -65,7 +74,9 @@ def integrated_command_attack(feature, command_csv, song_dir, dir, interval, opt
 
 
 def get_feature_extractor(feature, feature_parameters_dict):
-    if feature == 1:
+    if feature == 0:
+        return DBSpectrogram(n_fft=feature_parameters_dict["n_fft"], hop_length=feature_parameters_dict.get("hop_length")).to(DEVICE)
+    elif feature == 1:
         return Spectrogram(n_fft=feature_parameters_dict["n_fft"], hop_length=feature_parameters_dict.get("hop_length")).to(DEVICE)
     elif feature == 2:
         return MelSpectrogram(n_mels=feature_parameters_dict["n_mels"], 
@@ -89,15 +100,7 @@ def attack_sample(feature_extractor, command_path, song_path, integrated_command
     song = song.to(DEVICE)
 
     # Initialize the perturbation vector.
-    delta = Variable(torch.zeros(size=song.size()).to(DEVICE), requires_grad=True)
-    command_feature = feature_extractor(waveform=command)
-    integrated_command_feature = feature_extractor(waveform=song+delta)
-
-    loss_feature = torch.norm(integrated_command_feature - command_feature)
-    loss_delta = torch.norm(delta)
-    loss = loss_feature + penalty * loss_delta
-    
-    logging.info("loss_feature = {:.4f}, loss_delta = {:.4f}, loss = {:.4f}".format(loss_feature.data, loss_delta.data, loss.data))
+    delta = Variable((0.0002 * (torch.rand(size=song.size()) - 0.5)).to(DEVICE), requires_grad=True)
 
     # Choose an optimizer. You can add more choices if needed.
     if optimizer == "Adam":
@@ -108,16 +111,27 @@ def attack_sample(feature_extractor, command_path, song_path, integrated_command
         logging.error("Only support Adam and SGD!")
         return
     
+    command_feature = feature_extractor(waveform=command)
+    integrated_command_feature = feature_extractor(waveform=song+delta)
+
+    snr_base = torch.log10(torch.norm(song))
+
+    loss_feature = torch.norm(integrated_command_feature - command_feature)
+    loss_delta = 20 * (snr_base - torch.log10(torch.norm(delta)))
+    loss = loss_feature + penalty * loss_delta
+    
+    logging.info("loss_feature = {:.4f}, loss_delta = {:.4f}, loss = {:.4f}".format(loss_feature.data, loss_delta.data, loss.data))
+    
     loss_feature_trend = torch.zeros(num_iterations)
     loss_delta_trend = torch.zeros(num_iterations)
     loss_trend = torch.zeros(num_iterations)
     
-    # Minimize the objective: ||integrated_command_feature - command_feature|| + penalty * ||delta||
+    # Minimize the objective: loss = loss_feature + penalty * loss_delta
     for i in range(num_iterations):
         integrated_command_feature = feature_extractor(waveform=song+delta)
 
         loss_feature = torch.norm(integrated_command_feature - command_feature)
-        loss_delta = torch.norm(delta)
+        loss_delta = 20 * (snr_base - torch.log10(torch.norm(delta)))
         loss = loss_feature + penalty * loss_delta
         
         loss_feature_trend[i] = loss_feature
@@ -132,7 +146,7 @@ def attack_sample(feature_extractor, command_path, song_path, integrated_command
     integrated_command = integrated_command.clamp(min=-1.0, max=1.0).detach().cpu()
     song_clip = song.detach().cpu()
 
-    snr = get_snr(audio=song_clip, audio_with_noise=integrated_command)
+    snr = get_snr(audio=song_clip.numpy(), audio_with_noise=integrated_command.numpy())
 
     save(filepath=integrated_command_path, src=integrated_command, sample_rate=16000)
     save(filepath=song_clip_path, src=song_clip, sample_rate=16000)
@@ -141,9 +155,9 @@ def attack_sample(feature_extractor, command_path, song_path, integrated_command
     logging.info("")
 
     fig, ax = plt.subplots(nrows=1, ncols=3, sharex='row')
-    ax[0].plot(loss_feature_trend.detach().cpu())
-    ax[1].plot(loss_delta_trend.detach().cpu())
-    ax[2].plot(loss_trend.detach().cpu())
+    ax[0].plot(loss_feature_trend.detach().cpu().numpy())
+    ax[1].plot(loss_delta_trend.detach().cpu().numpy())
+    ax[2].plot(loss_trend.detach().cpu().numpy())
     fig.savefig("{}.png".format(integrated_command_path))
 
     return format(loss_feature.data, '.4f'), format(loss_delta.data, '.4f'), format(loss, '.4f'), format(snr, '.2f')
@@ -151,18 +165,21 @@ def attack_sample(feature_extractor, command_path, song_path, integrated_command
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument("-f", "--feature", type=int, default=1, help="")
+    parser.add_argument("-f", "--feature", type=int, default=0, help="")
     parser.add_argument("-c", "--command_csv", type=str, default="commands/commands.csv", help="")
     parser.add_argument("-s", "--song_dir", type=str, default="songs/", help="")
     parser.add_argument("-d", "--dir", type=str, default="integrated-commands/", help="")
-    parser.add_argument("-i", "--interval", type=float, default=1, help="Time interval to intercept a song.")
-    parser.add_argument("-p", "--penalty", type=float, default=500, help="Weight of the norm of the malicious perturbation.")
+    parser.add_argument("-i", "--interval", type=float, default=5, help="Time interval to intercept a song.")
+    parser.add_argument("-p", "--penalty", type=float, default=0, help="Weight of the norm of the malicious perturbation.")
     parser.add_argument("-o", "--optimizer", type=str, default="Adam", help="Integrated optimizers in PyTorch, including Adam and SGD.")
     parser.add_argument("-l", "--learning_rate", type=float, default=0.001, help="Learning rate used in the specified optimizer.")
-    parser.add_argument("-n", "--num_iterations", type=int, default=3000, help="The maximum number of iterations for the specified optimizer.")
+    parser.add_argument("-n", "--num_iterations", type=int, default=10000, help="The maximum number of iterations for the specified optimizer.")
     parser.add_argument("-g", "--gpu", type=str, default='0', help="GPU index to use.")
 
     args = parser.parse_args()
+
+    if args.feature == 0:
+        AMPLITUDE_TO_DB = AmplitudeToDB()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
