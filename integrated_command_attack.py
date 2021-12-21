@@ -28,7 +28,7 @@ def integrated_command_attack(feature, command_csv, song_dir, dir, interval, opt
 
     # The headers of the CSV file are defined as the absolute path and transcription of each and every command file.
     command_table = read_csv(csv_path=command_csv)
-    integrated_command_table = [["audio path", "transcription", "loss_feature", "loss_delta", "loss", "SNR"]]
+    integrated_command_table = [["audio path", "transcription", "loss_feature", "loss_perturbation", "loss", "SNR"]]
 
     song_filenames = os.listdir(song_dir)
     song_filenames.sort()
@@ -37,11 +37,14 @@ def integrated_command_attack(feature, command_csv, song_dir, dir, interval, opt
         command_name = os.path.basename(command_info[0])[: -4]
         integrated_command_dir = os.path.join(dir, "0", "{}-{}".format(command_name, feature))
         song_clip_dir = os.path.join(dir, "1", "{}-{}".format(command_name, feature))
+        perturbation_dir = os.path.join(dir, "2", "{}-{}".format(command_name, feature))
 
         if not os.path.exists(integrated_command_dir):
             os.makedirs(integrated_command_dir)
         if not os.path.exists(song_clip_dir):
             os.makedirs(song_clip_dir)
+        if not os.path.exists(perturbation_dir):
+            os.makedirs(perturbation_dir)
         
         command, _ = load(filepath=command_info[0])
 
@@ -62,13 +65,14 @@ def integrated_command_attack(feature, command_csv, song_dir, dir, interval, opt
                                                                                                 optimizer, penalty, learning_rate, num_iterations)
                     integrated_command_path = os.path.join(integrated_command_dir, integrated_command_filename)
                     song_clip_path = os.path.join(song_clip_dir, integrated_command_filename)
+                    perturbation_path = os.path.join(perturbation_dir, integrated_command_filename)
                     
                     logging.info("Start to generate {}".format(integrated_command_path))
 
-                    loss_feature, loss_delta, loss, snr = attack_sample(feature_extractor, command_info[0], song_path, integrated_command_path, song_clip_path, origin, 
-                                                                        penalty, optimizer, learning_rate, num_iterations)
+                    loss_feature, loss_perturbation, loss, snr = attack_sample(feature_extractor, command_info[0], song_path, integrated_command_path, song_clip_path, perturbation_path, origin, 
+                                                                               penalty, optimizer, learning_rate, num_iterations)
 
-                    integrated_command_table.append([integrated_command_path, command_info[1], loss_feature, loss_delta, loss, snr])
+                    integrated_command_table.append([integrated_command_path, command_info[1], loss_feature, loss_perturbation, loss, snr])
     
     write_csv(csv_path=os.path.join(dir, "integrated-commands-{}.csv".format(feature)), lines=integrated_command_table)
 
@@ -89,7 +93,7 @@ def get_feature_extractor(feature, feature_parameters_dict):
                                "hop_length": feature_parameters_dict.get("hop_length")}).to(DEVICE)
 
 
-def attack_sample(feature_extractor, command_path, song_path, integrated_command_path, song_clip_path, origin, penalty, optimizer, learning_rate, num_iterations):
+def attack_sample(feature_extractor, command_path, song_path, integrated_command_path, song_clip_path, perturbation_path, origin, penalty, optimizer, learning_rate, num_iterations):
     command, _ = load(filepath=command_path)
     song, _ = load(filepath=song_path)
 
@@ -100,67 +104,69 @@ def attack_sample(feature_extractor, command_path, song_path, integrated_command
     song = song.to(DEVICE)
 
     # Initialize the perturbation vector.
-    delta = Variable((0.0002 * (torch.rand(size=song.size()) - 0.5)).to(DEVICE), requires_grad=True)
+    perturbation = Variable((0.0002 * (torch.rand(size=song.size()) - 0.5)).to(DEVICE), requires_grad=True)
 
     # Choose an optimizer. You can add more choices if needed.
     if optimizer == "Adam":
-        optimizer = Adam(params=[delta], lr=learning_rate)
+        optimizer = Adam(params=[perturbation], lr=learning_rate)
     elif optimizer == "SGD":
-        optimizer = SGD(params=[delta], lr=learning_rate)
+        optimizer = SGD(params=[perturbation], lr=learning_rate)
     else:
         logging.error("Only support Adam and SGD!")
         return
     
-    command_feature = feature_extractor(waveform=command)
-    integrated_command_feature = feature_extractor(waveform=song+delta)
+    command_feature = feature_extractor(command)
+    integrated_command_feature = feature_extractor(song + perturbation)
 
     snr_base = torch.log10(torch.norm(song))
 
     loss_feature = torch.norm(integrated_command_feature - command_feature)
-    loss_delta = 20 * (snr_base - torch.log10(torch.norm(delta)))
-    loss = loss_feature + penalty * loss_delta
+    loss_perturbation = 20 * (snr_base - torch.log10(torch.norm(perturbation)))
+    loss = loss_feature + penalty * loss_perturbation
     
-    logging.info("loss_feature = {:.4f}, loss_delta = {:.4f}, loss = {:.4f}".format(loss_feature.data, loss_delta.data, loss.data))
+    logging.info("loss_feature = {:.4f}, loss_perturbation = {:.4f}, loss = {:.4f}".format(loss_feature.data, loss_perturbation.data, loss.data))
     
     loss_feature_trend = torch.zeros(num_iterations)
-    loss_delta_trend = torch.zeros(num_iterations)
+    loss_perturbation_trend = torch.zeros(num_iterations)
     loss_trend = torch.zeros(num_iterations)
     
-    # Minimize the objective: loss = loss_feature + penalty * loss_delta
+    # Minimize the objective: loss = loss_feature + penalty * loss_perturbation
     for i in range(num_iterations):
-        integrated_command_feature = feature_extractor(waveform=song+delta)
+        integrated_command_feature = feature_extractor(song + perturbation)
 
         loss_feature = torch.norm(integrated_command_feature - command_feature)
-        loss_delta = 20 * (snr_base - torch.log10(torch.norm(delta)))
-        loss = loss_feature + penalty * loss_delta
+        loss_perturbation = 20 * (snr_base - torch.log10(torch.norm(perturbation)))
+        loss = loss_feature + penalty * loss_perturbation
         
         loss_feature_trend[i] = loss_feature
-        loss_delta_trend[i] = loss_delta
+        loss_perturbation_trend[i] = loss_perturbation
         loss_trend[i] = loss
 
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
 
-    integrated_command = song + delta
+    integrated_command = song + perturbation
     integrated_command = integrated_command.clamp(min=-1.0, max=1.0).detach().cpu()
     song_clip = song.detach().cpu()
+    perturbation = integrated_command - song_clip
 
     snr = get_snr(audio=song_clip.numpy(), audio_with_noise=integrated_command.numpy())
 
     save(filepath=integrated_command_path, src=integrated_command, sample_rate=16000)
     save(filepath=song_clip_path, src=song_clip, sample_rate=16000)
+    save(filepath=perturbation_path, src=perturbation, sample_rate=16000)
 
-    logging.info("loss_feature = {:.4f}, loss_delta = {:.4f}, loss = {:.4f}, snr = {:.2f}".format(loss_feature.data, loss_delta.data, loss.data, snr))
+    logging.info("loss_feature = {:.4f}, loss_perturbation = {:.4f}, loss = {:.4f}, snr = {:.2f}".format(loss_feature.data, loss_perturbation.data, loss.data, snr))
     logging.info("")
 
     fig, ax = plt.subplots(nrows=1, ncols=3, sharex='row')
     ax[0].plot(loss_feature_trend.detach().cpu().numpy())
-    ax[1].plot(loss_delta_trend.detach().cpu().numpy())
+    ax[1].plot(loss_perturbation_trend.detach().cpu().numpy())
     ax[2].plot(loss_trend.detach().cpu().numpy())
     fig.savefig("{}.png".format(integrated_command_path))
 
-    return format(loss_feature.data, '.4f'), format(loss_delta.data, '.4f'), format(loss, '.4f'), format(snr, '.2f')
+    return format(loss_feature.data, '.4f'), format(loss_perturbation.data, '.4f'), format(loss, '.4f'), format(snr, '.2f')
 
 
 if __name__ == "__main__":
