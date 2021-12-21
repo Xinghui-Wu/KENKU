@@ -18,7 +18,7 @@ def write_csv(csv_path, lines):
 
 
 def get_feature_parameters(feature):
-    assert feature in (1, 2, 3)
+    assert feature in (0, 1, 2, 3)
     
     feature_parameters = list()
 
@@ -27,7 +27,7 @@ def get_feature_parameters(feature):
     n_fft_list = (400, 512)
     hop_length_ratio = (0.5, )
 
-    if feature == 1:
+    if feature <= 1:
         for n_fft in n_fft_list:
             for hop_length in hop_length_ratio:
                 feature_parameters.append({"n_fft": n_fft, "hop_length": int(n_fft * hop_length)})
