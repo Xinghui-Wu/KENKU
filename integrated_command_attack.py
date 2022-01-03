@@ -118,10 +118,8 @@ def attack_sample(feature_extractor, command_path, song_path, integrated_command
     command_feature = feature_extractor(command)
     integrated_command_feature = feature_extractor(song + perturbation)
 
-    snr_base = torch.log10(torch.norm(song))
-
     loss_feature = torch.norm(integrated_command_feature - command_feature)
-    loss_perturbation = 20 * (snr_base - torch.log10(torch.norm(perturbation)))
+    loss_perturbation = torch.norm(perturbation)
     loss = loss_feature + penalty * loss_perturbation
     
     logging.info("loss_feature = {:.4f}, loss_perturbation = {:.4f}, loss = {:.4f}".format(loss_feature.data, loss_perturbation.data, loss.data))
@@ -135,7 +133,7 @@ def attack_sample(feature_extractor, command_path, song_path, integrated_command
         integrated_command_feature = feature_extractor(song + perturbation)
 
         loss_feature = torch.norm(integrated_command_feature - command_feature)
-        loss_perturbation = 20 * (snr_base - torch.log10(torch.norm(perturbation)))
+        loss_perturbation = torch.norm(perturbation)
         loss = loss_feature + penalty * loss_perturbation
         
         loss_feature_trend[i] = loss_feature
@@ -171,12 +169,12 @@ def attack_sample(feature_extractor, command_path, song_path, integrated_command
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument("-f", "--feature", type=int, default=0, help="")
+    parser.add_argument("-f", "--feature", type=int, default=3, help="")
     parser.add_argument("-c", "--command_csv", type=str, default="commands/commands.csv", help="")
     parser.add_argument("-s", "--song_dir", type=str, default="songs/", help="")
     parser.add_argument("-d", "--dir", type=str, default="integrated-commands/", help="")
-    parser.add_argument("-i", "--interval", type=float, default=5, help="Time interval to intercept a song.")
-    parser.add_argument("-p", "--penalty", type=float, default=0, help="Weight of the norm of the malicious perturbation.")
+    parser.add_argument("-i", "--interval", type=float, default=1, help="Time interval to intercept a song.")
+    parser.add_argument("-p", "--penalty", type=float, default=75, help="Weight of the norm of the malicious perturbation.")
     parser.add_argument("-o", "--optimizer", type=str, default="Adam", help="Integrated optimizers in PyTorch, including Adam and SGD.")
     parser.add_argument("-l", "--learning_rate", type=float, default=0.001, help="Learning rate used in the specified optimizer.")
     parser.add_argument("-n", "--num_iterations", type=int, default=10000, help="The maximum number of iterations for the specified optimizer.")

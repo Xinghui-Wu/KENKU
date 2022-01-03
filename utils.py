@@ -22,9 +22,9 @@ def get_feature_parameters(feature):
     
     feature_parameters = list()
 
-    n_mfcc_list = (20, )
-    n_mels_list = (40, 80, 128)
-    n_fft_list = (400, 512)
+    n_mfcc_list = (40, )
+    n_mels_list = (128, )
+    n_fft_list = (400, )
     hop_length_ratio = (0.5, )
 
     if feature <= 1:
