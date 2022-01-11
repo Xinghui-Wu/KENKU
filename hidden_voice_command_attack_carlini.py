@@ -112,9 +112,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
     parser.add_argument("-f", "--feature", type=int, default=3, help="")
     parser.add_argument("-c", "--command_csv", type=str, default="commands/commands.csv", help="")
-    parser.add_argument("-d", "--dir", type=str, default="hidden-voice-commands-1223/", help="")
-    parser.add_argument("-n", "--num_iterations", type=int, default=1000, help="")
-    parser.add_argument("-i", "--interval", type=int, default=100, help="")
+    parser.add_argument("-d", "--dir", type=str, default="hidden-voice-commands/", help="")
+    parser.add_argument("-n", "--num_iterations", type=int, default=1, help="")
+    parser.add_argument("-i", "--interval", type=int, default=1, help="")
 
     args = parser.parse_args()
 
