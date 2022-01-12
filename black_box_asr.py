@@ -1,9 +1,12 @@
 import argparse
 import json
+import io
 import logging
 import traceback
 
+import azure.cognitiveservices.speech as speechsdk
 from aip import AipSpeech
+from google.cloud import speech
 
 from utils import *
 from asr.alibaba import alibaba
@@ -22,7 +25,7 @@ def black_box_asr(input_csv, output_csv, language, vendor):
     with open(output_csv, 'w') as csv_file:
         csv_writer = csv.writer(csv_file)
 
-        title = [["Google", "Microsoft", "Amazon", "IBM"], ["Baidu", "Alibaba", "Tencent", "iFLYTEK"]]
+        title = [["Google", "Microsoft"], ["Alibaba", "Tencent", "iFLYTEK"]]
         audio_table[0].extend(title[vendor])
         csv_writer.writerow(audio_table[0])
         
@@ -33,9 +36,9 @@ def black_box_asr(input_csv, output_csv, language, vendor):
 
             try:
                 if vendor == 0:
-                    asr_results = ["Google", "Microsoft", "Amazon", "IBM"]
+                    asr_results = [google_asr(audio_path, language)]
                 else:
-                    asr_results = [baidu_asr(audio_path, language), alibaba_asr(audio_path, language), tencent_asr(audio_path, language), iflytek_asr(audio_path, language)]
+                    asr_results = [alibaba_asr(audio_path, language), tencent_asr(audio_path, language), iflytek_asr(audio_path, language)]
             
                 audio_info.extend(asr_results)
             except:
@@ -99,6 +102,64 @@ def iflytek_asr(audio_path, language):
                 return asr_result
 
     return ""
+
+
+def google_asr(audio_path, language):
+    client = speech.SpeechClient()
+
+    with io.open(audio_path, "rb") as audio_file:
+        content = audio_file.read()
+    
+    audio = speech.RecognitionAudio(content=content)
+
+    if language == 0:
+        language_code = "en-US"
+    else:
+        language_code = "zh"
+    
+    config = speech.RecognitionConfig(
+        sample_rate_hertz=16000,
+        language_code=language_code,
+    )
+
+    response = client.recognize(config=config, audio=audio)
+
+    # Each result is for a consecutive portion of the audio. Iterate through
+    # them to get the transcripts for the entire audio file.
+    
+    for result in response.results:
+        # The first alternative is the most likely one for this portion.
+        print(u"Transcript: {}".format(result.alternatives[0].transcript))
+
+        return result.alternatives[0].transcript
+
+
+def microsoft_asr(audio_path, language):
+    if language == 0:
+        speech_recognition_language = "en-US"
+    else:
+        speech_recognition_language = "zh-CN"
+    
+    speech_config = speechsdk.SpeechConfig(subscription=ACCOUNT["Microsoft"]["speech_key"], region=ACCOUNT["Microsoft"]["location"], speech_recognition_language=speech_recognition_language)
+    audio_input = speechsdk.AudioConfig(filename=audio_path)
+    speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input)
+    
+    result = speech_recognizer.recognize_once_async().get()
+
+    asr_result = ""
+    
+    if result.reason == speechsdk.ResultReason.RecognizedSpeech:
+        asr_result = result.text
+        print("Recognized: {}".format(result.text))
+    elif result.reason == speechsdk.ResultReason.NoMatch:
+        print("No speech could be recognized: {}".format(result.no_match_details))
+    elif result.reason == speechsdk.ResultReason.Canceled:
+        cancellation_details = result.cancellation_details
+        print("Speech Recognition canceled: {}".format(cancellation_details.reason))
+        if cancellation_details.reason == speechsdk.CancellationReason.Error:
+            print("Error details: {}".format(cancellation_details.error_details))
+
+    return asr_result
 
 
 if __name__ == "__main__":
