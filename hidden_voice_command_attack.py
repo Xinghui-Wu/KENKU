@@ -30,16 +30,17 @@ def hidden_voice_command_attack(feature, command_csv, dir, optimizer, penalty, l
     command_table = read_csv(csv_path=command_csv)
     hidden_voice_command_table = [["audio path", "transcription", "loss_feature", "loss_perturbation", "loss", "SNR"]]
 
+    hidden_voice_command_dir = os.path.join(dir, "0", "{}".format(feature))
+    perturbation_dir = os.path.join(dir, "2", "{}".format(feature))
+
+    if not os.path.exists(hidden_voice_command_dir):
+        os.makedirs(hidden_voice_command_dir)
+    if not os.path.exists(perturbation_dir):
+        os.makedirs(perturbation_dir)
+    
     for command_info in command_table[1: ]:
         command_name = os.path.basename(command_info[0])[: -4]
-        hidden_voice_command_dir = os.path.join(dir, "0", "{}-{}".format(command_name, feature))
-        perturbation_dir = os.path.join(dir, "2", "{}-{}".format(command_name, feature))
-
-        if not os.path.exists(hidden_voice_command_dir):
-            os.makedirs(hidden_voice_command_dir)
-        if not os.path.exists(perturbation_dir):
-            os.makedirs(perturbation_dir)
-
+        
         for feature_parameters_dict in feature_parameters:
             feature_extractor = get_feature_extractor(feature, feature_parameters_dict)
 
@@ -147,7 +148,7 @@ def attack_sample(feature_extractor, command_path, hidden_voice_command_path, pe
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
     parser.add_argument("-f", "--feature", type=int, default=3, help="")
-    parser.add_argument("-c", "--command_csv", type=str, default="commands/commands-all.csv", help="")
+    parser.add_argument("-c", "--command_csv", type=str, default="commands/commands.csv", help="")
     parser.add_argument("-d", "--dir", type=str, default="hidden-voice-commands/", help="")
     parser.add_argument("-p", "--penalty", type=float, default=1000, help="Weight of the norm of the malicious perturbation.")
     parser.add_argument("-o", "--optimizer", type=str, default="Adam", help="Integrated optimizers in PyTorch, including Adam and SGD.")
