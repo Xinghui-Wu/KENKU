@@ -5,6 +5,7 @@
 # Audio files
 *.wav
 *.mp3
+audio/
 commands*/
 songs*/
 hidden-voice-commands*/
