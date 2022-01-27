@@ -84,7 +84,7 @@ def attack_sample(feature_extractor, command_path, hidden_voice_command_path, pe
     command = command.to(DEVICE)
 
     # Initialize the perturbation vector.
-    perturbation = Variable((0.0002 * (torch.rand(size=command.size()) - 0.5)).to(DEVICE), requires_grad=True)
+    perturbation = Variable((0.5 * (torch.rand(size=command.size()) - 0.5)).to(DEVICE), requires_grad=True)
 
     # Choose an optimizer. You can add more choices if needed.
     if optimizer == "Adam":
@@ -108,7 +108,7 @@ def attack_sample(feature_extractor, command_path, hidden_voice_command_path, pe
     loss_perturbation_trend = torch.zeros(num_iterations)
     loss_trend = torch.zeros(num_iterations)
 
-    # Minimize the objective: loss = loss_feature + penalty * loss_perturbation
+    # Minimize the objective: loss = loss_feature - penalty * loss_perturbation
     for i in range(num_iterations):
         hidden_voice_command_feature = feature_extractor(command + perturbation)
 
@@ -150,10 +150,10 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--feature", type=int, default=3, help="")
     parser.add_argument("-c", "--command_csv", type=str, default="commands/commands.csv", help="")
     parser.add_argument("-d", "--dir", type=str, default="hidden-voice-commands/", help="")
-    parser.add_argument("-p", "--penalty", type=float, default=1000, help="Weight of the norm of the malicious perturbation.")
+    parser.add_argument("-p", "--penalty", type=float, default=40, help="Weight of the norm of the malicious perturbation.")
     parser.add_argument("-o", "--optimizer", type=str, default="Adam", help="Integrated optimizers in PyTorch, including Adam and SGD.")
-    parser.add_argument("-l", "--learning_rate", type=float, default=0.0001, help="Learning rate used in the specified optimizer.")
-    parser.add_argument("-n", "--num_iterations", type=int, default=10000, help="The maximum number of iterations for the specified optimizer.")
+    parser.add_argument("-l", "--learning_rate", type=float, default=0.001, help="Learning rate used in the specified optimizer.")
+    parser.add_argument("-n", "--num_iterations", type=int, default=5000, help="The maximum number of iterations for the specified optimizer.")
     parser.add_argument("-g", "--gpu", type=str, default='0', help="GPU index to use.")
 
     args = parser.parse_args()
