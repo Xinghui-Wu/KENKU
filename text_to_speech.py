@@ -69,8 +69,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Use the text-to-speech APIs of Baidu and Google to synthesize audio files.")
     parser.add_argument("-c", "--commands", type=str, default="commands/commands.txt", help="Path of the transcription file of the desired commands.")
     parser.add_argument("-d", "--dir", type=str, default="commands/", help="Output directory of the command audio files.")
-    parser.add_argument("-l", "--language", type=int, default=0, help="")
-    parser.add_argument("-a", "--account_json", type=str, default=".vscode/account.json", help="")
+    parser.add_argument("-l", "--language", type=int, default=0, help="Specify 0 or 1 to synthesize audio files for English or Chinese commands respectively.")
+    parser.add_argument("-a", "--account_json", type=str, default="account.json", help="Path of the account information file.")
 
     args = parser.parse_args()
 
