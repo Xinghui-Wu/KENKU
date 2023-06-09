@@ -18,5 +18,9 @@
         "appid": "",
         "secret_key": ""
     },
-    "Google": "google.json"
+    "Google": "google.json",
+    "Microsoft": {
+        "speech_key": "",
+        "location": ""
+    }
 }
