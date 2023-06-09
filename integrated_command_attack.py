@@ -168,16 +168,16 @@ def attack_sample(feature_extractor, command_path, song_path, integrated_command
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="")
-    parser.add_argument("-f", "--feature", type=int, default=3, help="")
-    parser.add_argument("-c", "--command_csv", type=str, default="commands/commands.csv", help="")
-    parser.add_argument("-s", "--song_dir", type=str, default="songs/", help="")
-    parser.add_argument("-d", "--dir", type=str, default="integrated-commands/", help="")
+    parser = argparse.ArgumentParser(description="Integrated command attack supported by the KENKU framework.")
+    parser.add_argument("-f", "--feature", type=int, default=3, help="Specify 3 for the MFCC feature transformation. The other settings have been discarded.")
+    parser.add_argument("-c", "--command_csv", type=str, default="commands/commands.csv", help="Path of the information file of the desired commands.")
+    parser.add_argument("-s", "--song_dir", type=str, default="songs/", help="Directory of the specified song clips.")
+    parser.add_argument("-d", "--dir", type=str, default="integrated-commands/", help="Output directory of the generated integrated commands.")
     parser.add_argument("-i", "--interval", type=float, default=1, help="Time interval to intercept a song.")
-    parser.add_argument("-p", "--penalty", type=float, default=75, help="Weight of the norm of the malicious perturbation.")
-    parser.add_argument("-o", "--optimizer", type=str, default="Adam", help="Integrated optimizers in PyTorch, including Adam and SGD.")
+    parser.add_argument("-p", "--penalty", type=float, default=75, help="Weight of the adversarial perturbation loss.")
+    parser.add_argument("-o", "--optimizer", type=str, default="Adam", help="Adam or SGD.")
     parser.add_argument("-l", "--learning_rate", type=float, default=0.001, help="Learning rate used in the specified optimizer.")
-    parser.add_argument("-n", "--num_iterations", type=int, default=10000, help="The maximum number of iterations for the specified optimizer.")
+    parser.add_argument("-n", "--num_iterations", type=int, default=10000, help="Maximum number of iterations for the specified optimizer.")
     parser.add_argument("-g", "--gpu", type=str, default='0', help="GPU index to use.")
 
     args = parser.parse_args()
