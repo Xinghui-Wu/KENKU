@@ -18,7 +18,7 @@ gTTS==2.2.1
 idna==2.9
 isort==4.3.21
 jmespath==0.10.0
-joblib==0.14.1
+joblib==1.2.0
 kiwisolver==1.2.0
 lazy-object-proxy==1.4.3
 librosa==0.7.2
