@@ -37,7 +37,7 @@ python-dateutil==2.8.1
 requests==2.23.0
 resampy==0.2.2
 scikit-learn==0.22.2.post1
-scipy==1.4.1
+scipy==1.10.0
 six==1.14.0
 SoundFile==0.10.3.post1
 SpeechRecognition==3.8.1
