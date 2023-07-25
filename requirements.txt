@@ -3,7 +3,7 @@ asr-evaluation==2.0.4
 astroid==2.4.1
 audioread==2.1.8
 baidu-aip==2.2.18.0
-certifi==2020.4.5.1
+certifi==2023.7.22
 cffi==1.14.0
 chardet==3.0.4
 click==7.1.2
