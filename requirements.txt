@@ -12,7 +12,7 @@ decorator==4.4.2
 edit-distance==1.0.4
 ffmpeg==1.4
 future==0.18.2
-gevent==20.9.0
+gevent==23.9.1
 greenlet==0.4.17
 gTTS==2.2.1
 idna==2.9
