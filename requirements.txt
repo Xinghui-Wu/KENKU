@@ -49,7 +49,7 @@ torchaudio==0.7.2
 tqdm==4.46.0
 typed-ast==1.4.1
 typing-extensions==3.7.4.3
-urllib3==1.25.9
+urllib3==1.26.17
 websocket==0.2.1
 websocket-client==0.56.0
 wrapt==1.12.1
